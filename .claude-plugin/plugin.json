@@ -1,0 +1,10 @@
+{
+  "name": "poptin",
+  "version": "1.0.0",
+  "description": "Manage Poptin popups, forms, email campaigns, segments, and analytics through AI assistants.",
+  "author": { "name": "Poptin", "url": "https://www.poptin.com" },
+  "homepage": "https://www.poptin.com/mcp/",
+  "repository": "https://github.com/Poptin-LTD/Poptin-MCP",
+  "license": "MIT",
+  "keywords": ["poptin", "mcp", "marketing", "popups", "forms", "email", "analytics"]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "poptin",
+  "version": "1.0.0",
+  "description": "Manage Poptin popups, forms, email campaigns, segments, and analytics through AI assistants.",
+  "mcpServers": {
+    "poptin": {
+      "httpUrl": "https://mcp.popt.in/mcp"
+    }
+  }
+}

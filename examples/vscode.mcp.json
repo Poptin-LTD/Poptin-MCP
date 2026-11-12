@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "poptin": {
+      "type": "http",
+      "url": "https://mcp.popt.in/mcp"
+    }
+  }
+}

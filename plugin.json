@@ -1,0 +1,92 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "poptin",
+  "version": "1.0.0",
+  "description": "Manage Poptin popups, forms, email campaigns, segments, and analytics through AI assistants.",
+  "author": {
+    "name": "Poptin",
+    "url": "https://www.poptin.com"
+  },
+  "homepage": "https://www.poptin.com/mcp/",
+  "repository": "https://github.com/Poptin-LTD/Poptin-MCP",
+  "license": "MIT",
+  "keywords": ["poptin", "mcp", "marketing", "popups", "forms", "email", "analytics"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Poptin",
+        "shortDescription": "Popups, forms and email",
+        "longDescription": "Connect your AI assistant to your Poptin account. Explore popup and embedded form performance, manage existing poptins, prepare and review email campaigns, build segments, and organize contact properties and subscription topics. Sign in through Poptin with OAuth and authorize one account per connection. Available actions follow your account permissions and enabled features. Sending, scheduling, and destructive actions require review and confirmation.",
+        "category": "Business & Operations",
+        "websiteURL": "https://www.poptin.com/mcp/",
+        "supportURL": "https://help.poptin.com/en/",
+        "privacyPolicyURL": "https://www.poptin.com/privacy-policy/",
+        "termsOfServiceURL": "https://www.poptin.com/terms-of-service/",
+        "logo": "./resources/poptin.png",
+        "composerIcon": "./resources/poptin.png",
+        "defaultPrompt": [
+          "Show me the popups and embedded forms in my Poptin account.",
+          "Which popups and forms had the highest conversion rate last month?",
+          "Help me prepare an email campaign and review it before sending."
+        ]
+      },
+      "review": {
+        "prompts": [
+          "Show me the popups and embedded forms in my Poptin account.",
+          "Preview an audience of subscribed contacts before saving it."
+        ],
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Inventory. Setup: authorize a dedicated test account containing a popup and an embedded form with known names.",
+              "prompt": "Show me the popups and embedded forms in my Poptin account.",
+              "tools_triggered": "list-poptins",
+              "expected_behavior": "Call list-poptins with mode=inventory. Show names and statuses supported by the returned items and respect pagination. Do not invent items or access another account."
+            },
+            {
+              "description": "Reporting period. Setup: record a test account's timezone and popup/form reporting totals for October 2026.",
+              "prompt": "Summarize my popup and form views, conversions, and conversion rate for October 2026.",
+              "tools_triggered": "get-poptin-analytics",
+              "expected_behavior": "Read account settings as needed and use stat_from=2026-10-01 and stat_to=2026-10-31. Explain returned totals and missing data accurately; do not turn missing values into zero."
+            },
+            {
+              "description": "Campaign inspection. Setup: enable email features in a test account with known draft and sent campaigns.",
+              "prompt": "List my email campaigns and tell me their current statuses.",
+              "tools_triggered": "list-campaigns",
+              "expected_behavior": "List only campaigns returned for the authorized account and explain their statuses. Respect pagination. Do not create, send, or schedule a campaign."
+            },
+            {
+              "description": "Audience preview. Setup: enable segments and email features with subscribed and unsubscribed sample contacts; record expected subscription counts.",
+              "prompt": "Preview an audience of all subscribed contacts and tell me how many match. Do not save it.",
+              "tools_triggered": "preview-segment",
+              "expected_behavior": "Read the subscription-status filter resource, preview the subscribed-contact filter, and explain matching and subscribed counts from the result. Never call save-segment."
+            },
+            {
+              "description": "Reusable account data. Setup: enable subscription topics and prepare known test contact properties and topics.",
+              "prompt": "Show me my contact properties and subscription topics so I can reuse them in a campaign.",
+              "tools_triggered": "list-properties, list-preferences",
+              "expected_behavior": "List returned property and preference names from the authorized account. Explain unavailable features honestly. Do not create, edit, or delete anything."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Popup creation is unavailable in release 1.0.0. Explain the limitation and direct the user to the Poptin dashboard; do not call a mutating tool or claim a popup was created.",
+              "prompt": "Create a new exit-intent popup for my store."
+            },
+            {
+              "description": "Popup visual editing is unavailable in release 1.0.0. Explain the limitation; do not mutate the popup or substitute an email-design tool.",
+              "prompt": "Change the background color and font of my welcome popup."
+            },
+            {
+              "description": "SMS sending is outside this server's supported surface. Explain the limitation without using email-send tools or claiming that a message was sent.",
+              "prompt": "Send an SMS promotion to my subscribers."
+            }
+          ]
+        }
+      },
+      "publication": {
+        "release_notes": "Initial public package for Poptin's hosted OAuth MCP server, with connection guides, registry metadata, and client configurations."
+      }
+    }
+  }
+}
