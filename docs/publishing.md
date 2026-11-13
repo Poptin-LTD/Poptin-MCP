@@ -155,3 +155,28 @@ completing its review requirements. Include the manifests, connection configurat
 referenced artwork, license, and notice. Exclude `.git`, `.venv`, workflow tooling,
 and credentials. No account upload, publication, or automatic release workflow
 is configured in this repository.
+
+## Claude directory submission package
+
+Submit the `claude/` subfolder as the plugin root, not this repository root.
+The standalone package is version **1.0.1**; the multi-client root manifests
+remain at 1.0.0 because this is a packaging-only revision.
+
+The folder contains only its Claude manifest, square PNG icon, native MCP
+configuration, README, MIT license, and branding notice. The hosted connector,
+OAuth flow, and safety requirements are unchanged. Repository scripts, CI,
+SVG source artwork and other clients' configurations are deliberately outside
+this distribution, not disabled or removed from the repository.
+
+In the directory submission editor, select `claude/` as the plugin subfolder.
+If uploading an archive instead, archive the *contents* of `claude/` so that
+`.claude-plugin/plugin.json` and `.mcp.json` are at the archive root. Do not
+include the parent `claude/` directory or repository development files.
+After selecting the new root, rerun the directory checks and confirm that the
+scanned package/version is 1.0.1. A new commit alone does not change a submission
+that is still configured to scan the repository root.
+
+The repository validator enforces the package's exact six-file allowlist,
+UTF-8 text with no NUL bytes or shebangs, unchanged connector and icon, and
+consistent metadata. Passing these checks does not constitute marketplace
+approval; directory policy and human review still apply.

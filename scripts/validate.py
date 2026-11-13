@@ -175,6 +175,33 @@ def validate_metadata():
                 "Listing icon must be square, 256–4096 pixels, and at most 5 MiB")
 
 
+
+def validate_claude_package():
+    package = ROOT / "claude"
+    expected = {".claude-plugin/plugin.json", ".claude-plugin/icon.png", ".mcp.json",
+                "README.md", "LICENSE", "NOTICE.md"}
+    actual = {str(p.relative_to(package)).replace("\\", "/")
+              for p in package.rglob("*") if p.is_file()}
+    require(actual == expected, "Claude submission package must contain only its six declared files")
+    for path in package.rglob("*"):
+        require(not path.is_symlink(), "Claude package cannot contain symlinks")
+        if path.is_file() and path.suffix != ".png":
+            text = path.read_text(encoding="utf-8")
+            require("\x00" not in text and not text.startswith("#!"),
+                    "Claude package text must be UTF-8 without NUL bytes or executable shebangs")
+    manifest = load_json(package / ".claude-plugin/plugin.json")
+    require(manifest["name"] == "poptin" and manifest["version"] == "1.0.1",
+            "Unexpected standalone Claude package identity/version")
+    root_manifest = load_json(ROOT / ".claude-plugin/plugin.json")
+    require({k: v for k, v in manifest.items() if k != "version"} ==
+            {k: v for k, v in root_manifest.items() if k != "version"},
+            "Standalone Claude metadata must match the root integration except packaging version")
+    require(load_json(package / ".mcp.json") == load_json(ROOT / ".mcp.json"),
+            "Standalone Claude connection must match the root integration")
+    require(manifest["icon"] == "./.claude-plugin/icon.png", "Use the package-local icon")
+    require((package / ".claude-plugin/icon.png").read_bytes() ==
+            (ROOT / ".claude-plugin/icon.png").read_bytes(), "Use the approved icon unchanged")
+
 def validate_workflow():
     workflow = yaml.load((ROOT / ".github/workflows/validate.yml").read_text(), Loader=yaml.BaseLoader)
     require(set(workflow["on"]) == {"push", "pull_request", "workflow_dispatch"}, "Unexpected workflow triggers")
@@ -226,6 +253,8 @@ def main():
         print(f"PASS {filename}: official JSON schema")
     validate_metadata()
     print("PASS endpoint, identity, version, native configurations, and listing assets")
+    validate_claude_package()
+    print("PASS standalone Claude package allowlist and metadata")
     validate_workflow()
     print("PASS workflow YAML and permissions")
     validate_documents()
