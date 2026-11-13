@@ -26,38 +26,20 @@ implementation. Plugin manifests do link to this public package repository.
 
 ## Run validation
 
-Use Python 3.9 or later:
+Validation is defined explicitly in .github/workflows/validate.yml using
+Python 3.12 and pinned jsonschema and PyYAML dependencies. There is no separate
+executable script or development dependency manifest in the distributed root.
 
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install -r requirements-dev.txt
-.venv/bin/python scripts/validate.py
-```
+Pushes and pull requests run schema, endpoint, version, image, local-document,
+workflow-permission, root-package file-type and public-link checks. A manual
+Run workflow can skip public-link checking. The workflow has read-only
+permissions and never publishes. Existing schema and integration checks are
+preserved; validation code is visible in the workflow, not hidden in an asset.
 
-The validator downloads the official, versioned JSON schemas and checks the
-registry and portable manifests against them. It also checks JSON syntax,
-duplicate keys, endpoint and version consistency, native connection settings,
-listing images, local Markdown links and anchors, and workflow YAML.
-
-For an offline run, provide `--schema-dir /path/to/schemas` containing the
-unmodified official `server.schema.json`, `plugin.schema.json`, and
-`mcp.schema.json` referenced by the manifests.
-
-Run `.venv/bin/python scripts/validate.py --check-links` to check documentation
-links separately, without rerunning metadata or schema validation.
-Missing pages (404/410) fail; rate limits, bot blocks, and network failures are
-reported as **unverified**, not successful checks.
-Dynamic badges and Grok's signed-in installation destination are skipped.
-
-GitHub Actions runs one job with two named validation steps: repository validation,
-then public documentation links. Python setup and dependency installation happen
-once, and link checking runs only after repository validation succeeds. Pushes and
-pull requests run both steps. Manual **Run workflow** runs include both by default;
-uncheck the link option to skip link checking. The workflow has read-only repository
-permissions and never publishes. Where Claude Code is installed, also run
-`claude plugin validate . --strict` for its authoritative native check.
-The repository validator checks the native configuration fields used here; it
-does not replace a client runtime or marketplace review.
+Where Claude Code is installed, run "claude plugin validate . --strict" too.
+Repository checks do not replace client-runtime tests or directory review.
+Missing pages (404/410) fail; rate limits and network failures are reported as
+unverified. Dynamic badges and Grok's signed-in installation route are skipped.
 
 ## Official MCP Registry
 
@@ -158,25 +140,18 @@ is configured in this repository.
 
 ## Claude directory submission package
 
-Submit the `claude/` subfolder as the plugin root, not this repository root.
-The standalone package is version **1.0.1**; the multi-client root manifests
-remain at 1.0.0 because this is a packaging-only revision.
+Use the repository root as the plugin path. Version **1.0.2** removes the
+duplicate Claude subfolder and SVG sources, uses existing PNG artwork, and
+keeps validation in the read-only GitHub workflow. All client manifests share
+the release version. Endpoints, OAuth behavior and other client configurations
+are unchanged.
 
-The folder contains only its Claude manifest, square PNG icon, native MCP
-configuration, README, MIT license, and branding notice. The hosted connector,
-OAuth flow, and safety requirements are unchanged. Repository scripts, CI,
-SVG source artwork and other clients' configurations are deliberately outside
-this distribution, not disabled or removed from the repository.
+The Claude manifest is .claude-plugin/plugin.json; .claude-plugin/ alone
+is not the plugin root because it excludes the sibling MCP configuration.
 
-In the directory submission editor, select `claude/` as the plugin subfolder.
-If uploading an archive instead, archive the *contents* of `claude/` so that
-`.claude-plugin/plugin.json` and `.mcp.json` are at the archive root. Do not
-include the parent `claude/` directory or repository development files.
-After selecting the new root, rerun the directory checks and confirm that the
-scanned package/version is 1.0.1. A new commit alone does not change a submission
-that is still configured to scan the repository root.
-
-The repository validator enforces the package's exact six-file allowlist,
-UTF-8 text with no NUL bytes or shebangs, unchanged connector and icon, and
-consistent metadata. Passing these checks does not constitute marketplace
-approval; directory policy and human review still apply.
+After merging, rerun directory checks against the new commit and root path.
+This cleanup does not establish directory acceptance. In particular, the
+portable mcp.json and other clients' metadata remain intentionally available;
+any directory discovery or policy finding about those must be reviewed rather
+than deleting an integration merely to suppress a warning. No directory
+submission or client runtime test is performed by repository validation.

@@ -29,13 +29,273 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
-          cache-dependency-path: requirements-dev.txt
       - name: Install validation dependencies
-        run: python -m pip install -r requirements-dev.txt
-      - name: Validate repository
-        run: python scripts/validate.py
+        run: python -m pip install jsonschema==4.23.0 PyYAML==6.0.2
+      - name: Validate repository and public links
+        shell: python
+        env:
+          CHECK_LINKS: ${{ github.event_name != 'workflow_dispatch' || inputs.check_links }}
+        run: |
+          """Validate Poptin's public metadata and docs; never sign in or publish."""
 
-      - name: Check public links
-        if: ${{ github.event_name != 'workflow_dispatch' || inputs.check_links }}
-        run: python scripts/validate.py --check-links
+          import argparse
+          import json
+          import re
+          import struct
+          import sys
+          import os
+          from pathlib import Path
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import unquote, urlsplit
+          from urllib.request import Request, urlopen
+
+          import jsonschema
+          import yaml
+
+
+          ROOT = Path.cwd().resolve()
+          ENDPOINT = "https://mcp.popt.in/mcp"
+          REPOSITORY = "https://github.com/Poptin-LTD/Poptin-MCP"
+          SCHEMAS = {
+              "server.json": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+              "plugin.json": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+              "mcp.json": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+          }
+          IGNORED = {".git", ".venv", ".cache", "__pycache__", "dist", "node_modules"}
+
+
+          def require(condition, message):
+              if not condition:
+                  raise ValueError(message)
+
+
+          def unique_object(pairs):
+              result = {}
+              for key, value in pairs:
+                  require(key not in result, f"Duplicate JSON key: {key}")
+                  result[key] = value
+              return result
+
+
+          def load_json(path):
+              return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+
+
+          def request(url):
+              return urlopen(Request(url, headers={"User-Agent": "Poptin-repository-validation/1.0"}), timeout=20)
+
+
+          def validate_schema(filename, schema_dir):
+              url = SCHEMAS[filename]
+              if schema_dir:
+                  schema = load_json(schema_dir / url.rsplit("/", 1)[-1])
+              else:
+                  with request(url) as response:
+                      schema = json.load(response)
+              validator_class = jsonschema.validators.validator_for(schema)
+              validator_class.check_schema(schema)
+              validator = validator_class(schema, format_checker=jsonschema.FormatChecker())
+              errors = sorted(validator.iter_errors(load_json(ROOT / filename)), key=lambda error: str(error.path))
+              require(not errors, f"{filename}: " + "; ".join(error.message for error in errors))
+
+
+          def contained_file(base, value):
+              path = (base / unquote(value)).resolve()
+              require(path.is_relative_to(ROOT), f"Path escapes repository: {value}")
+              require(path.is_file(), f"Missing referenced file: {value}")
+              return path
+
+
+          def document_links(text):
+              # Exclude fenced examples, then inspect Markdown links and HTML image/link attributes.
+              text = re.sub(r"^```[^\n]*\n.*?^```\s*$", "", text, flags=re.M | re.S)
+              return re.findall(r"\]\(([^\s)]+)\)", text) + re.findall(r'(?:href|src)="([^"]+)"', text)
+
+
+          def anchors(text):
+              result = set()
+              counts = {}
+              for heading in re.findall(r"^#{1,6}\s+(.+?)\s*#*\s*$", text, flags=re.M):
+                  slug = re.sub(r"[^\w\s-]", "", heading.lower()).replace(" ", "-")
+                  count = counts.get(slug, 0)
+                  counts[slug] = count + 1
+                  result.add(f"{slug}-{count}" if count else slug)
+              return result
+
+
+          def validate_documents():
+              remote = set()
+              for path in ROOT.rglob("*.md"):
+                  if any(part in IGNORED for part in path.relative_to(ROOT).parts):
+                      continue
+                  text = path.read_text(encoding="utf-8")
+                  require(text.count("```") % 2 == 0, f"Unclosed code fence in {path.relative_to(ROOT)}")
+                  for link in document_links(text):
+                      parsed = urlsplit(link)
+                      if parsed.scheme:
+                          require(parsed.scheme == "https", f"Use HTTPS for documentation links: {link}")
+                          remote.add(link.split("#", 1)[0])
+                          continue
+                      target = contained_file(path.parent, parsed.path) if parsed.path else path
+                      if parsed.fragment and target.suffix == ".md":
+                          require(unquote(parsed.fragment) in anchors(target.read_text(encoding="utf-8")),
+                                  f"Missing heading target: {path.relative_to(ROOT)} -> {link}")
+              return remote
+
+
+          def validate_metadata():
+              registry = load_json(ROOT / "server.json")
+              plugin = load_json(ROOT / "plugin.json")
+              require(registry["name"] == "io.github.Poptin-LTD/poptin", "Unexpected registry namespace")
+              require(registry["remotes"] == [{"type": "streamable-http", "url": ENDPOINT}],
+                      "Registry must describe Poptin's hosted Streamable HTTP endpoint")
+              require("packages" not in registry, "Poptin does not distribute a local server package")
+              require("repository" not in registry,
+                      "The registry repository field identifies server source; this repo contains public metadata")
+              require(plugin["name"] == "poptin" and plugin["repository"] == REPOSITORY, "Unexpected plugin identity")
+              require(plugin["license"] == "MIT", "Plugin license must agree with LICENSE and NOTICE.md")
+              require(re.fullmatch(r"\d+\.\d+\.\d+", registry["version"]), "Use a three-part release version")
+
+              for filename in ("plugin.json", ".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"):
+                  data = load_json(ROOT / filename)
+                  require(data["name"] == "poptin", f"Unexpected plugin name in {filename}")
+                  require(data["version"] == registry["version"], f"Version differs from server.json: {filename}")
+                  require(data["description"] == registry["description"], f"Description differs from server.json: {filename}")
+
+              connections = {
+                  "mcp.json": ("mcpServers", {"type": "streamable-http", "url": ENDPOINT}),
+                  ".mcp.json": ("mcpServers", {"type": "http", "url": ENDPOINT}),
+                  "gemini-extension.json": ("mcpServers", {"httpUrl": ENDPOINT}),
+                  "examples/vscode.mcp.json": ("servers", {"type": "http", "url": ENDPOINT}),
+              }
+              for filename, (key, expected) in connections.items():
+                  require(load_json(ROOT / filename)[key] == {"poptin": expected},
+                          f"Unexpected endpoint, transport, headers, or server entries in {filename}")
+
+              for filename in (".claude-plugin/plugin.json", ".cursor-plugin/plugin.json"):
+                  data = load_json(ROOT / filename)
+                  require(data["repository"] == REPOSITORY and data["license"] == "MIT", f"Inconsistent metadata: {filename}")
+              claude = load_json(ROOT / ".claude-plugin/plugin.json")
+              require(claude["privacyPolicyUrl"] == "https://www.poptin.com/privacy-policy/",
+                      "Claude listing must explicitly identify Poptin's privacy policy")
+              icon = contained_file(ROOT, claude["icon"])
+              icon_data = icon.read_bytes()
+              require(icon_data[:8] == b"\x89PNG\r\n\x1a\n", "Claude listing icon must be PNG")
+              width, height = struct.unpack(">II", icon_data[16:24])
+              require(width == height and 512 <= width <= 2048 and len(icon_data) < 2 * 1024 * 1024,
+                      "Claude listing icon must be square, 512–2048 pixels, and under 2 MiB")
+              cursor = load_json(ROOT / ".cursor-plugin/plugin.json")
+              require(cursor["mcpServers"] == "./.mcp.json", "Cursor must use the native HTTP configuration")
+              contained_file(ROOT, cursor["mcpServers"])
+              contained_file(ROOT, cursor["logo"])
+
+              interface = plugin["extensions"]["com.openai"]["interface"]
+              for key, limit in (("displayName", 30), ("shortDescription", 30), ("longDescription", 4000)):
+                  require(isinstance(interface[key], str) and 0 < len(interface[key]) <= limit,
+                          f"OpenAI {key} must contain 1–{limit} characters")
+              require(interface["category"] == "Business & Operations", "Unexpected OpenAI category")
+              prompts = interface["defaultPrompt"]
+              require(isinstance(prompts, list) and 1 <= len(prompts) <= 3 and len(set(prompts)) == len(prompts),
+                      "Supply one to three distinct default prompts")
+              require(all(isinstance(prompt, str) and 0 < len(prompt) <= 128 and "\n" not in prompt for prompt in prompts),
+                      "Default prompts must be single lines of up to 128 characters")
+              for key in ("websiteURL", "supportURL", "privacyPolicyURL", "termsOfServiceURL"):
+                  url = urlsplit(interface[key])
+                  require(url.scheme == "https" and url.netloc and not url.username and not url.fragment,
+                          f"Invalid public listing URL: {key}")
+              for key in ("logo", "composerIcon"):
+                  path = contained_file(ROOT, interface[key])
+                  data = path.read_bytes()
+                  require(data[:8] == b"\x89PNG\r\n\x1a\n", f"Expected a PNG icon: {path.name}")
+                  width, height = struct.unpack(">II", data[16:24])
+                  require(width == height and 256 <= width <= 4096 and len(data) <= 5 * 1024 * 1024,
+                          "Listing icon must be square, 256–4096 pixels, and at most 5 MiB")
+
+
+
+          def validate_root_package():
+              allowed = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"}
+              for path in ROOT.rglob("*"):
+                  relative = path.relative_to(ROOT)
+                  if any(part in IGNORED for part in relative.parts):
+                      continue
+                  require(not path.is_symlink(), f"Package cannot contain symlinks: {relative}")
+                  if not path.is_file():
+                      continue
+                  require(path.suffix.lower() in allowed or str(relative) in {"LICENSE", ".gitignore"},
+                          f"Unexpected file type: {relative}")
+                  require(".claude-plugin" not in relative.parts[1:], f"Nested Claude plugin: {relative}")
+                  require(path.name not in {"requirements-dev.txt", "package.json", "package-lock.json", "pyproject.toml"},
+                          f"Development manifest: {relative}")
+                  if path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"}:
+                      text = path.read_text(encoding="utf-8")
+                      require("\x00" not in text and not text.startswith("#!"),
+                              f"Invalid or executable text file: {relative}")
+
+          def validate_workflow():
+              workflow = yaml.load((ROOT / ".github/workflows/validate.yml").read_text(), Loader=yaml.BaseLoader)
+              require(set(workflow["on"]) == {"push", "pull_request", "workflow_dispatch"}, "Unexpected workflow triggers")
+              require(workflow["permissions"] == {"contents": "read"}, "Validation requires only read access")
+              require(workflow["jobs"], "Workflow must contain a validation job")
+
+
+          def check_remote_links(links):
+              failed = []
+              for url in sorted(links):
+                  # These are installation destinations or dynamic badge images, not documentation pages.
+                  if urlsplit(url).netloc in {"grok.com", "img.shields.io"}:
+                      continue
+                  try:
+                      with request(url) as response:
+                          require(response.status == 200, f"Unexpected HTTP status for {url}")
+                      print(f"  OK {url}")
+                  except HTTPError as error:
+                      if error.code in {404, 410}:
+                          failed.append(f"{error.code}: {url}")
+                      else:
+                          print(f"  UNVERIFIED HTTP {error.code}: {url}")
+                  except (URLError, TimeoutError) as error:
+                      print(f"  UNVERIFIED {url}: {error}")
+              require(not failed, "Broken public links: " + "; ".join(failed))
+
+
+          def main():
+              parser = argparse.ArgumentParser(description=__doc__)
+              parser.add_argument("--schema-dir", type=Path,
+                                  help="Read official server.schema.json, plugin.schema.json, and mcp.schema.json locally")
+              parser.add_argument("--check-links", action="store_true", help="Check documentation links only; skip metadata validation")
+              args = parser.parse_args()
+              if args.check_links:
+                  check_remote_links(validate_documents())
+                  print("Link validation passed.")
+                  return
+
+              for path in ROOT.rglob("*"):
+                  if any(part in IGNORED for part in path.relative_to(ROOT).parts):
+                      continue
+                  require(not path.is_symlink(), f"Symlinks are not allowed in the public package: {path}")
+                  if path.suffix == ".json":
+                      load_json(path)
+              for filename in SCHEMAS:
+                  validate_schema(filename, args.schema_dir)
+                  print(f"PASS {filename}: official JSON schema")
+              validate_metadata()
+              print("PASS endpoint, identity, version, native configurations, and listing assets")
+              validate_root_package()
+              print("PASS root package file types and no nested Claude package")
+              validate_workflow()
+              print("PASS workflow YAML and permissions")
+              validate_documents()
+              print("PASS local documentation links, images, anchors, and code fences")
+              print("Validation passed.")
+
+
+          if __name__ == "__main__":
+              try:
+                  main()
+                  if os.environ.get("CHECK_LINKS", "false") == "true":
+                      check_remote_links(validate_documents())
+                      print("Link validation passed.")
+              except (ValueError, KeyError, OSError, jsonschema.exceptions.SchemaError, yaml.YAMLError) as error:
+                  print(f"FAIL {error}", file=sys.stderr)
+                  sys.exit(1)

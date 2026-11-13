@@ -1,6 +1,6 @@
 {
   "name": "poptin",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Manage Poptin popups, forms, email campaigns, segments, and analytics through AI assistants.",
   "mcpServers": {
     "poptin": {
