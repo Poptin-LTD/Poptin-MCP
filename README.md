@@ -21,11 +21,6 @@
   <a href="#questions-you-might-have">FAQ</a>
 </p>
 
-## Meet Poptin MCP
-
-Your best-performing form. The popup that needs a second look. The next email
-campaign waiting to go out. Bring them into the conversation.
-
 **Poptin MCP is the official connection between your AI assistant and your
 [Poptin](https://www.poptin.com) account.** Ask questions about your marketing,
 explore the results, and manage supported actions using everyday language.
