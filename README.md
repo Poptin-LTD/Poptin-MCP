@@ -11,6 +11,7 @@
   <img alt="Transport: Streamable HTTP" src="https://img.shields.io/badge/MCP-Streamable_HTTP-FF6376?style=flat-square">
   <img alt="Authentication: OAuth" src="https://img.shields.io/badge/Authentication-OAuth-FFC163?style=flat-square">
   <a href="LICENSE"><img alt="Repository license: MIT" src="https://img.shields.io/badge/License-MIT-51DBEE?style=flat-square"></a>
+  <a href="https://github.com/Poptin-LTD/Poptin-MCP/actions/workflows/validate.yml?query=branch%3Amain"><img alt="CI status on main" src="https://img.shields.io/github/actions/workflow/status/Poptin-LTD/Poptin-MCP/validate.yml?branch=main&amp;label=CI&amp;style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -62,8 +63,8 @@ complete sign-in in the browser rather than pasting credentials into chat.
 | Grok | [Custom MCP connector](docs/clients.md#grok) |
 | Other MCP clients | [Connect by URL](docs/clients.md#other-mcp-clients) |
 
-These are documented setup routes, not a claim of marketplace approval or a
-completed compatibility test for every client. Availability can depend on the
+The Poptin team has tested OAuth and client connections and received customer
+feedback. Marketplace approval is separate. Availability can depend on the
 client version, plan, and organization settings. See the
 [connection test record](docs/publishing.md#connection-tests).
 
