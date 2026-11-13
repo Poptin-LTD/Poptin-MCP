@@ -11,6 +11,7 @@
   <img alt="Transport: Streamable HTTP" src="https://img.shields.io/badge/MCP-Streamable_HTTP-FF6376?style=flat-square">
   <img alt="Authentication: OAuth" src="https://img.shields.io/badge/Authentication-OAuth-FFC163?style=flat-square">
   <a href="LICENSE"><img alt="Repository license: MIT" src="https://img.shields.io/badge/License-MIT-51DBEE?style=flat-square"></a>
+  <a href="https://github.com/Poptin-LTD/Poptin-MCP/actions/workflows/validate.yml?query=branch%3Amain"><img alt="CI status on main" src="https://img.shields.io/github/actions/workflow/status/Poptin-LTD/Poptin-MCP/validate.yml?branch=main&amp;label=CI&amp;style=flat-square"></a>
 </p>
 
 <p align="center">
@@ -62,10 +63,9 @@ complete sign-in in the browser rather than pasting credentials into chat.
 | Grok | [Custom MCP connector](docs/clients.md#grok) |
 | Other MCP clients | [Connect by URL](docs/clients.md#other-mcp-clients) |
 
-These are documented setup routes, not a claim of marketplace approval or a
-completed compatibility test for every client. Availability can depend on the
-client version, plan, and organization settings. See the
-[connection test record](docs/publishing.md#connection-tests).
+The Poptin team has tested OAuth and client connections and received customer
+feedback. Marketplace approval is separate. Availability can depend on the
+client version, plan, and organization settings.
 
 ## What you can do
 
@@ -191,8 +191,20 @@ message. Keep passwords and tokens out of your report.
 
 ## For maintainers
 
-See [publishing and validation](docs/publishing.md) for repository checks,
-registry publication, client packages, and outstanding marketplace review steps.
+The [Validate workflow](.github/workflows/validate.yml) checks schemas, manifest
+consistency, assets, and documentation.
+
+After merging reviewed changes, run [Publish to MCP Registry](.github/workflows/publish-mcp.yml)
+manually from the default branch, or push a fresh `vMAJOR.MINOR.PATCH` repository
+tag at a commit on that branch. Publication waits for validation and verifies the
+resulting registry record; its Actions summary links to the listing.
+
+Repository tags are independent of the MCP version in `server.json`. An identical
+active listing is skipped; changed registry metadata requires a new unique
+manifest version. Keep MCP versions consistent across client manifests when
+updating them. Protect the default branch and release tags through the team's
+normal review process. See the official [publishing guide](https://github.com/modelcontextprotocol/registry/blob/main/docs/modelcontextprotocol-io/github-actions.mdx)
+for OIDC details. Client marketplace submissions are separate.
 
 Repository code, configuration, and documentation use the [MIT license](LICENSE).
 Poptin branding is excluded; see [license scope and branding](NOTICE.md).

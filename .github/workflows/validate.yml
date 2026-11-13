@@ -3,6 +3,7 @@ name: Validate
 on:
   push:
   pull_request:
+  workflow_call:
   workflow_dispatch:
     inputs:
       check_links:
@@ -150,8 +151,8 @@ jobs:
               require(registry["remotes"] == [{"type": "streamable-http", "url": ENDPOINT}],
                       "Registry must describe Poptin's hosted Streamable HTTP endpoint")
               require("packages" not in registry, "Poptin does not distribute a local server package")
-              require("repository" not in registry,
-                      "The registry repository field identifies server source; this repo contains public metadata")
+              require(registry.get("repository") == {"url": REPOSITORY, "source": "github"},
+                      "Registry repository must identify Poptin's public MCP repository")
               require(plugin["name"] == "poptin" and plugin["repository"] == REPOSITORY, "Unexpected plugin identity")
               require(plugin["license"] == "MIT", "Plugin license must agree with LICENSE and NOTICE.md")
               require(re.fullmatch(r"\d+\.\d+\.\d+", registry["version"]), "Use a three-part release version")
@@ -234,9 +235,23 @@ jobs:
 
           def validate_workflow():
               workflow = yaml.load((ROOT / ".github/workflows/validate.yml").read_text(), Loader=yaml.BaseLoader)
-              require(set(workflow["on"]) == {"push", "pull_request", "workflow_dispatch"}, "Unexpected workflow triggers")
+              require(set(workflow["on"]) == {"push", "pull_request", "workflow_dispatch", "workflow_call"},
+                      "Unexpected workflow triggers")
               require(workflow["permissions"] == {"contents": "read"}, "Validation requires only read access")
               require(workflow["jobs"], "Workflow must contain a validation job")
+              publish = yaml.load((ROOT / ".github/workflows/publish-mcp.yml").read_text(), Loader=yaml.BaseLoader)
+              require(set(publish["on"]) == {"push", "workflow_dispatch"}, "Unexpected publication triggers")
+              require(publish["on"]["push"] == {"tags": ["v*"]}, "Automatic publication requires a release tag")
+              require(publish["permissions"] == {"contents": "read"}, "Publishing defaults must remain read-only")
+              require(publish["concurrency"] == {"group": "mcp-registry-publish", "cancel-in-progress": "false"},
+                      "Registry publications must be serialized without cancelling an active run")
+              jobs = publish["jobs"]
+              require(set(jobs) == {"validate", "publish"}, "Unexpected publishing jobs")
+              require(jobs["validate"]["uses"] == "./.github/workflows/validate.yml",
+                      "Publication must reuse repository validation")
+              require(jobs["publish"]["needs"] == "validate", "Publication must wait for validation")
+              require(jobs["publish"]["permissions"] == {"contents": "read", "id-token": "write"},
+                      "Only the publish job should receive OIDC permissions")
 
 
           def check_remote_links(links):
