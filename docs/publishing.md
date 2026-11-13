@@ -140,7 +140,7 @@ is configured in this repository.
 
 ## Claude directory submission package
 
-Use the repository root as the plugin path. Version **1.0.2** removes the
+Use the repository root as the plugin path. Version **1.0.0** removes the
 duplicate Claude subfolder and SVG sources, uses existing PNG artwork, and
 keeps validation in the read-only GitHub workflow. All client manifests share
 the release version. Endpoints, OAuth behavior and other client configurations

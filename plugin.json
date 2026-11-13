@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "poptin",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "Manage Poptin popups, forms, email campaigns, segments, and analytics through AI assistants.",
   "author": {
     "name": "Poptin",
