@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="resources/poptin.png" alt="Poptin MCP — Your marketing, in conversation." width="100%">
+  <img src="resources/poptin.png" alt="Poptin logo" width="96" height="96">
 </p>
 
 <p align="center">
