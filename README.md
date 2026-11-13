@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Explore performance. Find your next opportunity. Take action with Poptin.</strong>
+  <strong>Send email marketing campaigns and analyze popup performance with Poptin MCP</strong>
 </p>
 
 <p align="center">
