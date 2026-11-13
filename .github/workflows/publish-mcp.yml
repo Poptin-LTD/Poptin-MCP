@@ -1,0 +1,147 @@
+name: Publish to MCP Registry
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Serialize registry writes, including manual retries and different repository tags.
+concurrency:
+  group: mcp-registry-publish
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: >-
+      github.repository == 'Poptin-LTD/Poptin-MCP' &&
+      (github.event_name == 'push' ||
+       github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+    uses: ./.github/workflows/validate.yml
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      MCP_PUBLISHER_VERSION: v1.8.9
+      REGISTRY_URL: https://registry.modelcontextprotocol.io
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Check release commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_REF_TYPE" == tag && ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo '::error::Repository release tags must use vMAJOR.MINOR.PATCH.'
+            exit 1
+          fi
+          git merge-base --is-ancestor "$GITHUB_SHA" "refs/remotes/origin/$DEFAULT_BRANCH" || {
+            echo '::error::The release commit must belong to the default branch.'
+            exit 1
+          }
+
+      - name: Check whether this manifest is already published
+        id: registry
+        shell: bash
+        run: |
+          set -euo pipefail
+          name=$(jq -r '.name | @uri' server.json)
+          version=$(jq -r '.version | @uri' server.json)
+          record_url="$REGISTRY_URL/v0.1/servers/$name/versions/$version"
+          echo "REGISTRY_RECORD_URL=$record_url" >> "$GITHUB_ENV"
+          record="$RUNNER_TEMP/mcp-registry-record.json"
+          status=$(curl --silent --show-error --location --max-time 60 \
+            --output "$record" --write-out '%{http_code}' "$record_url")
+          case "$status" in
+            404)
+              echo 'exists=false' >> "$GITHUB_OUTPUT"
+              ;;
+            200)
+              if ! jq -e --slurpfile expected server.json '
+                (.server | del(."$schema")) == ($expected[0] | del(."$schema")) and
+                ._meta["io.modelcontextprotocol.registry/official"].status == "active"
+              ' "$record" > /dev/null; then
+                echo '::error::This version exists with different metadata or is inactive. Review the registry record; use a new manifest version for metadata changes.'
+                exit 1
+              fi
+              echo 'exists=true' >> "$GITHUB_OUTPUT"
+              echo 'The committed manifest is already published and active; skipping publication.'
+              ;;
+            *)
+              echo "::error::Registry lookup returned HTTP $status; publication stopped."
+              exit 1
+              ;;
+          esac
+
+      - name: Install cosign
+        if: steps.registry.outputs.exists == 'false'
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Download and verify mcp-publisher
+        if: steps.registry.outputs.exists == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          os=$(uname -s | tr '[:upper:]' '[:lower:]')
+          arch=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          archive="mcp-publisher_${os}_${arch}.tar.gz"
+          base_url="https://github.com/modelcontextprotocol/registry/releases/download/$MCP_PUBLISHER_VERSION"
+          cd "$RUNNER_TEMP"
+          curl --fail --location --silent --show-error --max-time 120 --output "$archive" "$base_url/$archive"
+          curl --fail --location --silent --show-error --max-time 120 --output "$archive.sigstore.json" "$base_url/$archive.sigstore.json"
+          cosign verify-blob \
+            --bundle "$archive.sigstore.json" \
+            --certificate-identity "https://github.com/modelcontextprotocol/registry/.github/workflows/release.yml@refs/tags/$MCP_PUBLISHER_VERSION" \
+            --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+            "$archive"
+          tar xzf "$archive" mcp-publisher
+
+      - name: Validate with the official publisher
+        if: steps.registry.outputs.exists == 'false'
+        run: '"$RUNNER_TEMP/mcp-publisher" validate server.json'
+
+      - name: Authenticate to MCP Registry
+        if: steps.registry.outputs.exists == 'false'
+        run: '"$RUNNER_TEMP/mcp-publisher" login github-oidc --registry="$REGISTRY_URL"'
+
+      - name: Publish committed manifest
+        if: steps.registry.outputs.exists == 'false'
+        run: '"$RUNNER_TEMP/mcp-publisher" publish server.json'
+
+      - name: Verify registry record
+        shell: bash
+        run: |
+          set -euo pipefail
+          record="$RUNNER_TEMP/mcp-registry-record.json"
+          curl --fail --silent --show-error --location --max-time 60 \
+            --retry 3 --retry-all-errors --output "$record" "$REGISTRY_RECORD_URL"
+          jq -e --slurpfile expected server.json '
+            (.server | del(."$schema")) == ($expected[0] | del(."$schema")) and
+            ._meta["io.modelcontextprotocol.registry/official"].status == "active"
+          ' "$record" > /dev/null
+          jq '{name: .server.name, version: .server.version,
+            registry: ._meta["io.modelcontextprotocol.registry/official"]}' "$record"
+          {
+            echo '### MCP Registry record verified'
+            printf '\nRecord: %s\n' "$REGISTRY_RECORD_URL"
+            printf '\nRepository commit: `%s`\n' "$GITHUB_SHA"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clear publisher credentials
+        if: always() && steps.registry.outputs.exists == 'false'
+        shell: bash
+        run: |
+          if [[ -x "$RUNNER_TEMP/mcp-publisher" ]]; then
+            "$RUNNER_TEMP/mcp-publisher" logout
+          fi

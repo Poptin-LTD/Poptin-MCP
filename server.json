@@ -4,6 +4,10 @@
   "title": "Poptin - Email Marketing & Pop Ups",
   "description": "Manage Poptin popups, forms, email campaigns, segments, and analytics through AI assistants.",
   "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/Poptin-LTD/Poptin-MCP",
+    "source": "github"
+  },
   "websiteUrl": "https://www.poptin.com/mcp/",
   "icons": [
     {
