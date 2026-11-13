@@ -138,6 +138,15 @@ def validate_metadata():
     for filename in (".claude-plugin/plugin.json", ".cursor-plugin/plugin.json"):
         data = load_json(ROOT / filename)
         require(data["repository"] == REPOSITORY and data["license"] == "MIT", f"Inconsistent metadata: {filename}")
+    claude = load_json(ROOT / ".claude-plugin/plugin.json")
+    require(claude["privacyPolicyUrl"] == "https://www.poptin.com/privacy-policy/",
+            "Claude listing must explicitly identify Poptin's privacy policy")
+    icon = contained_file(ROOT, claude["icon"])
+    icon_data = icon.read_bytes()
+    require(icon_data[:8] == b"\x89PNG\r\n\x1a\n", "Claude listing icon must be PNG")
+    width, height = struct.unpack(">II", icon_data[16:24])
+    require(width == height and 512 <= width <= 2048 and len(icon_data) < 2 * 1024 * 1024,
+            "Claude listing icon must be square, 512–2048 pixels, and under 2 MiB")
     cursor = load_json(ROOT / ".cursor-plugin/plugin.json")
     require(cursor["mcpServers"] == "./.mcp.json", "Cursor must use the native HTTP configuration")
     contained_file(ROOT, cursor["mcpServers"])

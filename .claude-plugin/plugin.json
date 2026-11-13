@@ -6,5 +6,7 @@
   "homepage": "https://www.poptin.com/mcp/",
   "repository": "https://github.com/Poptin-LTD/Poptin-MCP",
   "license": "MIT",
-  "keywords": ["poptin", "mcp", "marketing", "popups", "forms", "email", "analytics"]
+  "keywords": ["poptin", "mcp", "marketing", "popups", "forms", "email", "analytics"],
+  "icon": "./.claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://www.poptin.com/privacy-policy/"
 }
