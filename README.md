@@ -28,19 +28,24 @@
 
 With Poptin MCP, you can:
 
-📧 Create and send email campaigns
+📧 **Create and send email campaigns**
+
 Prepare newsletters, promotions, and product announcements using an existing template or a custom HTML design. Review your audience and content, send a test, then confirm whether to send or schedule the campaign.
 
-📊 Analyze performance
+📊 **Analyze email and pop ups performance**
+
 Explore email campaign results and compare popup and form views, conversions, and conversion rates to find opportunities to improve.
 
-🎯 Build audience segments
+🎯 **Build audience segments**
+
 Preview and save segments using supported contact properties, subscription status, and customer activity.
 
-🪟 Manage existing popups and forms
+🪟 **Manage existing popups and forms**
+
 Find, rename, pause, or resume existing popups and forms, and manage their domains.
 
-👥 Organize audience data
+👥 **Organize audience data**
+
 Manage the contact properties and subscription topics used to organize your audience.
 
 Poptin hosts the server. Sign in with OAuth, choose your account, and get started.
