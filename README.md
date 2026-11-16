@@ -1,6 +1,7 @@
 <p align="center">
   <img src="resources/poptin.png" alt="Poptin logo" width="96" height="96">
 </p>
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/204332f8-2bfb-4499-abe1-5f03a7ccd95c" />
 
 <p align="center">
   <strong>Send email marketing campaigns and analyze popup performance with Poptin MCP</strong>
