@@ -24,9 +24,10 @@
 </p>
 
 **Poptin MCP is the official connection between your AI agnet and your
-[Poptin](https://www.poptin.com) account.** 
+[Poptin](https://www.poptin.com) account, so you can create email campaigns, analyze performance, and manage your marketing using natural language.** 
 
 With Poptin MCP, you can:
+
 📧 Create and send email campaigns
 Prepare newsletters, promotions, and product announcements using an existing template or a custom HTML design. Review your audience and content, send a test, then confirm whether to send or schedule the campaign.
 
