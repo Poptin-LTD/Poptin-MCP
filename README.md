@@ -14,8 +14,6 @@
   <a href="https://github.com/Poptin-LTD/Poptin-MCP/actions/workflows/validate.yml?query=branch%3Amain"><img alt="CI status on main" src="https://img.shields.io/github/actions/workflow/status/Poptin-LTD/Poptin-MCP/validate.yml?branch=main&amp;label=CI&amp;style=flat-square"></a>
 </p>
 
-<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/204332f8-2bfb-4499-abe1-5f03a7ccd95c" />
-
 
 <p align="center">
   <a href="#connect-in-a-minute">Connect</a> ·
@@ -25,11 +23,21 @@
   <a href="#questions-you-might-have">FAQ</a>
 </p>
 
-**Poptin MCP is the official connection between your AI assistant and your
-[Poptin](https://www.poptin.com) account.** Ask questions about your marketing,
-explore the results, and manage supported actions using everyday language.
+**Poptin MCP is the official connection between your AI agnet and your
+[Poptin](https://www.poptin.com) account.** 
+
+With Poptin MCP, you can:
+- 📧 Create email campaigns using Poptin templates or a custom HTML design, and prepare them for sending or scheduling.
+- 📊 Analyze performance of your email campaigns, popups, and forms, including views, conversions, and conversion rates.
+- 🎯 Build audience segments based on contact properties and activity.
+- 🪟 Manage existing popups and forms, including finding, renaming, pausing, and resuming them.
+- 👥 Manage contacts, including their details, properties, and subscription topics.
+Ask questions, explore your data, and take supported actions without switching between dashboards.
 
 Poptin hosts the server. Sign in with OAuth, choose your account, and get started.
+
+<img width="1280" height="720" alt="image" src="https://github.com/user-attachments/assets/204332f8-2bfb-4499-abe1-5f03a7ccd95c" />
+
 
 ## Connect in a minute
 
