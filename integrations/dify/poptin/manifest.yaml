@@ -1,0 +1,33 @@
+version: 0.0.1
+type: plugin
+author: poptins
+name: poptin
+label:
+  en_US: Poptin
+description:
+  en_US: Read popup, form, and email campaign performance from Poptin.
+icon: poptin.png
+resource:
+  memory: 268435456
+  permission: {}
+plugins:
+  tools:
+  - provider/poptin.yaml
+meta:
+  version: 0.0.1
+  arch:
+  - amd64
+  - arm64
+  runner:
+    language: python
+    version: '3.12'
+    entrypoint: main
+  minimum_dify_version: 1.9.0
+created_at: '2026-11-17T08:30:56Z'
+privacy: PRIVACY.md
+verified: false
+repo: https://github.com/Poptin-LTD/Poptin-MCP
+contact: support@poptin.com
+network:
+  domains:
+  - api.popt.in

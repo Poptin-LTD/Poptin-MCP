@@ -223,6 +223,9 @@ jobs:
                   require(not path.is_symlink(), f"Package cannot contain symlinks: {relative}")
                   if not path.is_file():
                       continue
+                  # Native integrations have their own runtime files and validation jobs.
+                  if relative.parts[:2] == ("integrations", "dify"):
+                      continue
                   require(path.suffix.lower() in allowed or str(relative) in {"LICENSE", ".gitignore"},
                           f"Unexpected file type: {relative}")
                   require(".claude-plugin" not in relative.parts[1:], f"Nested Claude plugin: {relative}")
