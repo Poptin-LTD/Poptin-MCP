@@ -131,6 +131,31 @@ directory in this repository.
 
 [Grok connector documentation](https://docs.x.ai/grok/connectors)
 
+## Replit
+
+[![Add to Replit](https://img.shields.io/badge/Add_to-Replit-F26207?style=flat-square)](https://replit.com/integrations?mcp=eyJkaXNwbGF5TmFtZSI6IlBvcHRpbiIsImJhc2VVcmwiOiJodHRwczovL21jcC5wb3B0LmluL21jcCJ9)
+
+1. Open **Add to Replit** and sign in to Replit if prompted.
+2. Review the **Poptin** connection and complete Poptin's OAuth sign-in.
+3. Select the Poptin account or subaccount to authorize, then ask Replit Agent:
+   “Show me the popups and embedded forms in my Poptin account.”
+
+If you prefer manual setup, open **Settings → Integrations → Your integrations →
+Add custom → Add personal MCP server**. Use **Poptin** as the display name and
+`https://mcp.popt.in/mcp` as the server URL, then select **Test & save** and complete
+sign-in. Workspace MCP connections require permission to manage workspace
+integration configurations. Custom MCP availability depends on your account and
+workspace permissions.
+
+The install link contains only the display name and public server URL. Do not add
+API keys, access tokens, or static Authorization headers. This installs a custom
+connection; public catalog inclusion is a separate process. The link follows
+Replit's documented format, but an end-to-end Poptin OAuth connection in Replit has
+not been verified for this guide.
+
+[Replit MCP connection guide](https://docs.replit.com/build/connect-via-mcp) ·
+[Install-link reference](https://docs.replit.com/features/mcp/overview#share-your-own-install-link)
+
 ## Other MCP clients
 
 Add a remote **Streamable HTTP** connection using `https://mcp.popt.in/mcp`.
