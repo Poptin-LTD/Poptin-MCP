@@ -23,7 +23,7 @@
   <a href="#questions-you-might-have">FAQ</a>
 </p>
 
-**Poptin MCP is the official connection between your AI agnet and your
+**Poptin MCP is the official connection between your AI agent and your
 [Poptin](https://www.poptin.com) account, so you can create email campaigns, analyze performance, and manage your marketing using natural language.** 
 
 With Poptin MCP, you can:
