@@ -1,0 +1,33 @@
+identity:
+  name: campaign_analytics
+  author: poptins
+  label:
+    en_US: Email campaign analytics
+description:
+  human:
+    en_US: Read cumulative campaign analytics, optionally filtering campaigns by UTC
+      creation date; this is not engagement occurring within the date range.
+  llm: Read cumulative campaign analytics, optionally filtering campaigns by UTC creation
+    date; this is not engagement occurring within the date range.
+parameters:
+- name: created_from
+  type: string
+  required: false
+  label:
+    en_US: Created from
+  human_description:
+    en_US: Include campaigns created on or after this UTC date, YYYY-MM-DD.
+  llm_description: Include campaigns created on or after this UTC date, YYYY-MM-DD.
+  form: llm
+- name: created_to
+  type: string
+  required: false
+  label:
+    en_US: Created to
+  human_description:
+    en_US: Include campaigns created on or before this UTC date, YYYY-MM-DD.
+  llm_description: Include campaigns created on or before this UTC date, YYYY-MM-DD.
+  form: llm
+extra:
+  python:
+    source: tools/campaign_analytics.py

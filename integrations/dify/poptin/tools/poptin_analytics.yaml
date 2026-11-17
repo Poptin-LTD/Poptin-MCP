@@ -1,0 +1,60 @@
+identity:
+  name: poptin_analytics
+  author: poptins
+  label:
+    en_US: Popup and form analytics
+description:
+  human:
+    en_US: Read account-wide popup and form analytics over inclusive UTC reporting
+      dates.
+  llm: Read account-wide popup and form analytics over inclusive UTC reporting dates.
+parameters:
+- name: device
+  type: string
+  required: false
+  label:
+    en_US: Device
+  human_description:
+    en_US: 'Optional device: desktop or mobile. Omit for all.'
+  llm_description: 'Optional device: desktop or mobile. Omit for all.'
+  form: llm
+- name: domain
+  type: string
+  required: false
+  label:
+    en_US: Domain
+  human_description:
+    en_US: Exact domain filter within your account; never used as a network destination.
+  llm_description: Exact domain filter within your account; never used as a network
+    destination.
+  form: llm
+- name: stat_from
+  type: string
+  required: true
+  label:
+    en_US: Stat from
+  human_description:
+    en_US: Inclusive UTC reporting start date, YYYY-MM-DD.
+  llm_description: Inclusive UTC reporting start date, YYYY-MM-DD.
+  form: llm
+- name: stat_to
+  type: string
+  required: true
+  label:
+    en_US: Stat to
+  human_description:
+    en_US: Inclusive UTC reporting end date, YYYY-MM-DD.
+  llm_description: Inclusive UTC reporting end date, YYYY-MM-DD.
+  form: llm
+- name: type
+  type: string
+  required: false
+  label:
+    en_US: Type
+  human_description:
+    en_US: 'Optional product type: popup or form. Omit for both.'
+  llm_description: 'Optional product type: popup or form. Omit for both.'
+  form: llm
+extra:
+  python:
+    source: tools/poptin_analytics.py

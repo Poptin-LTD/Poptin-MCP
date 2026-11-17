@@ -1,0 +1,69 @@
+identity:
+  name: list_campaigns
+  author: poptins
+  label:
+    en_US: List email campaigns
+description:
+  human:
+    en_US: Browse one page of campaigns, optionally filtered by name, status, and
+      UTC creation dates.
+  llm: Browse one page of campaigns, optionally filtered by name, status, and UTC
+    creation dates.
+parameters:
+- name: created_from
+  type: string
+  required: false
+  label:
+    en_US: Created from
+  human_description:
+    en_US: Include campaigns created on or after this UTC date, YYYY-MM-DD.
+  llm_description: Include campaigns created on or after this UTC date, YYYY-MM-DD.
+  form: llm
+- name: created_to
+  type: string
+  required: false
+  label:
+    en_US: Created to
+  human_description:
+    en_US: Include campaigns created on or before this UTC date, YYYY-MM-DD.
+  llm_description: Include campaigns created on or before this UTC date, YYYY-MM-DD.
+  form: llm
+- name: name
+  type: string
+  required: false
+  label:
+    en_US: Name
+  human_description:
+    en_US: Campaign name contains this text.
+  llm_description: Campaign name contains this text.
+  form: llm
+- name: page
+  type: number
+  required: false
+  label:
+    en_US: Page
+  human_description:
+    en_US: 'Positive page number. Default: 1.'
+  llm_description: 'Positive page number. Default: 1.'
+  form: llm
+- name: per_page
+  type: number
+  required: false
+  label:
+    en_US: Per page
+  human_description:
+    en_US: 'Results per page, from 1 to 100. API default: 10.'
+  llm_description: 'Results per page, from 1 to 100. API default: 10.'
+  form: llm
+- name: status
+  type: string
+  required: false
+  label:
+    en_US: Status
+  human_description:
+    en_US: Comma-separated campaign statuses, as accepted by the Poptin API.
+  llm_description: Comma-separated campaign statuses, as accepted by the Poptin API.
+  form: llm
+extra:
+  python:
+    source: tools/list_campaigns.py
