@@ -159,7 +159,8 @@ jobs:
 
               for filename in ("plugin.json", ".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json", "plugins/openclaw/.cursor-plugin/plugin.json"):
                   data = load_json(ROOT / filename)
-                  require(data["name"] == "poptin", f"Unexpected plugin name in {filename}")
+                  expected_name = "Poptin" if filename == "plugins/openclaw/.cursor-plugin/plugin.json" else "poptin"
+                  require(data["name"] == expected_name, f"Unexpected plugin name in {filename}")
                   require(data["version"] == registry["version"], f"Version differs from server.json: {filename}")
                   require(data["description"] == registry["description"], f"Description differs from server.json: {filename}")
 
@@ -221,6 +222,7 @@ jobs:
               require(actual == expected, "OpenClaw distribution must contain exactly the intended package files")
               manifest = load_json(package / ".cursor-plugin/plugin.json")
               source = load_json(ROOT / ".cursor-plugin/plugin.json")
+              source["name"] = "Poptin"
               source["logo"] = "assets/icon.png"
               require(manifest == source, "OpenClaw bundle metadata must match the existing Cursor metadata")
               require(load_json(package / ".mcp.json") == {"mcpServers": {"poptin": {

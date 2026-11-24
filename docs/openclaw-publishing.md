@@ -7,7 +7,8 @@ do not need to install ClawHub or OpenClaw on their computers.
 ## Owner and credentials
 
 The workflow publishes as the ClawHub owner `poptin`. The token's account must
-have publishing access to that owner. The bundle's runtime name is `poptin`;
+have publishing access to that owner. The bundle's display name is `Poptin` and
+OpenClaw derives the runtime ID `poptin` from it;
 review the resolved catalog name in the dry-run output before publication.
 The owner is fixed in the workflow, so each run uses the same publisher.
 This flow publishes to ClawHub and does not require an npm account or release.
