@@ -157,9 +157,10 @@ jobs:
               require(plugin["license"] == "MIT", "Plugin license must agree with LICENSE and NOTICE.md")
               require(re.fullmatch(r"\d+\.\d+\.\d+", registry["version"]), "Use a three-part release version")
 
-              for filename in ("plugin.json", ".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json"):
+              for filename in ("plugin.json", ".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json", "plugins/openclaw/.cursor-plugin/plugin.json"):
                   data = load_json(ROOT / filename)
-                  require(data["name"] == "poptin", f"Unexpected plugin name in {filename}")
+                  expected_name = "Poptin" if filename == "plugins/openclaw/.cursor-plugin/plugin.json" else "poptin"
+                  require(data["name"] == expected_name, f"Unexpected plugin name in {filename}")
                   require(data["version"] == registry["version"], f"Version differs from server.json: {filename}")
                   require(data["description"] == registry["description"], f"Description differs from server.json: {filename}")
 
@@ -214,6 +215,26 @@ jobs:
 
 
 
+          def validate_openclaw_package():
+              package = ROOT / "plugins/openclaw"
+              expected = {".cursor-plugin/plugin.json", ".mcp.json", "assets/icon.png", "README.md", "LICENSE", "NOTICE.md"}
+              actual = {str(path.relative_to(package)) for path in package.rglob("*") if path.is_file()}
+              require(actual == expected, "OpenClaw distribution must contain exactly the intended package files")
+              manifest = load_json(package / ".cursor-plugin/plugin.json")
+              source = load_json(ROOT / ".cursor-plugin/plugin.json")
+              source["name"] = "Poptin"
+              source["logo"] = "assets/icon.png"
+              require(manifest == source, "OpenClaw bundle metadata must match the existing Cursor metadata")
+              require(load_json(package / ".mcp.json") == {"mcpServers": {"poptin": {
+                  "type": "http", "url": ENDPOINT, "auth": "oauth"}}},
+                  "OpenClaw must use the Poptin OAuth HTTP endpoint without embedded credentials")
+              icon = (package / "assets/icon.png").read_bytes()
+              require(icon == (ROOT / "resources/poptin.png").read_bytes() and len(icon) <= 512 * 1024,
+                      "OpenClaw catalog icon must match Poptin artwork and fit ClawHub's limit")
+              require((package / "LICENSE").read_bytes() == (ROOT / "LICENSE").read_bytes(),
+                      "OpenClaw distribution must preserve the repository license")
+
+
           def validate_root_package():
               allowed = {".md", ".txt", ".json", ".yaml", ".yml", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"}
               for path in ROOT.rglob("*"):
@@ -223,7 +244,7 @@ jobs:
                   require(not path.is_symlink(), f"Package cannot contain symlinks: {relative}")
                   if not path.is_file():
                       continue
-                  require(path.suffix.lower() in allowed or str(relative) in {"LICENSE", ".gitignore"},
+                  require(path.suffix.lower() in allowed or str(relative) in {"LICENSE", ".gitignore", "plugins/openclaw/LICENSE"},
                           f"Unexpected file type: {relative}")
                   require(".claude-plugin" not in relative.parts[1:], f"Nested Claude plugin: {relative}")
                   require(path.name not in {"requirements-dev.txt", "package.json", "package-lock.json", "pyproject.toml"},
@@ -252,6 +273,17 @@ jobs:
               require(jobs["publish"]["needs"] == "validate", "Publication must wait for validation")
               require(jobs["publish"]["permissions"] == {"contents": "read", "id-token": "write"},
                       "Only the publish job should receive OIDC permissions")
+              clawhub = yaml.load((ROOT / ".github/workflows/publish-clawhub.yml").read_text(), Loader=yaml.BaseLoader)
+              require(set(clawhub["on"]) == {"workflow_dispatch"}, "ClawHub publication must be manual")
+              require(set(clawhub["on"]["workflow_dispatch"]["inputs"]) == {"dry_run"},
+                      "ClawHub owner must be fixed, not supplied at dispatch")
+              require(clawhub["on"]["workflow_dispatch"]["inputs"]["dry_run"]["default"] == "true",
+                      "ClawHub must default to preview")
+              job = clawhub["jobs"]["publish"]
+              require(job["needs"] == "validate", "ClawHub publication must wait for validation")
+              require(job["with"]["owner"] == "poptin" and job["with"]["family"] == "bundle-plugin",
+                      "ClawHub must publish the bundle package under poptin")
+              require(job["with"]["source_path"] == "plugins/openclaw", "ClawHub must publish only its distribution")
 
 
           def check_remote_links(links):
@@ -295,6 +327,7 @@ jobs:
                   validate_schema(filename, args.schema_dir)
                   print(f"PASS {filename}: official JSON schema")
               validate_metadata()
+              validate_openclaw_package()
               print("PASS endpoint, identity, version, native configurations, and listing assets")
               validate_root_package()
               print("PASS root package file types and no nested Claude package")
