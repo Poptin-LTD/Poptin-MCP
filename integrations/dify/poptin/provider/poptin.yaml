@@ -1,0 +1,26 @@
+identity:
+  author: poptins
+  name: poptin
+  label:
+    en_US: Poptin
+  description:
+    en_US: Read Poptin popup, form, and campaign performance.
+  icon: poptin.png
+credentials_for_provider:
+  api_key:
+    type: secret-input
+    required: true
+    label:
+      en_US: Poptin Public API key
+    help:
+      en_US: "Create a key in Poptin: My Account \u2192 API & Connections \u2192 API\
+        \ Keys. This is REST authentication, separate from MCP OAuth."
+    url: https://developers.poptin.com/docs/authentication
+tools:
+- tools/list_poptins.yaml
+- tools/poptin_analytics.yaml
+- tools/list_campaigns.yaml
+- tools/campaign_analytics.yaml
+extra:
+  python:
+    source: provider/poptin.py
