@@ -1,0 +1,42 @@
+name: Publish to ClawHub
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview the package without publishing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clawhub-publish
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: >-
+      github.repository == 'Poptin-LTD/Poptin-MCP' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: ./.github/workflows/validate.yml
+
+  publish:
+    needs: validate
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    # Pinned upstream workflow and CLI source; reviewed 2026-11-24.
+    uses: openclaw/clawhub/.github/workflows/package-publish.yml@6b91b6328c8eeb391ffe59deaddbf136b8db1683
+    with:
+      source: Poptin-LTD/Poptin-MCP
+      ref: ${{ github.sha }}
+      source_path: plugins/openclaw
+      family: bundle-plugin
+      owner: poptin
+      dry_run: ${{ inputs.dry_run }}
+      wait_for_publication: true
+    secrets:
+      clawhub_token: ${{ secrets.CLAWHUB_TOKEN }}

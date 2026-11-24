@@ -217,6 +217,9 @@ message. Keep passwords and tokens out of your report.
 
 ## For maintainers
 
+For the OpenClaw catalog, see [Publish Poptin to ClawHub](docs/openclaw-publishing.md).
+The dedicated package and manual GitHub Actions workflow publish through ClawHub.
+
 The [Validate workflow](.github/workflows/validate.yml) checks schemas, manifest
 consistency, assets, and documentation.
 
