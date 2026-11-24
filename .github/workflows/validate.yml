@@ -222,6 +222,7 @@ jobs:
               require(actual == expected, "OpenClaw distribution must contain exactly the intended package files")
               manifest = load_json(package / ".cursor-plugin/plugin.json")
               source = load_json(ROOT / ".cursor-plugin/plugin.json")
+              source["id"] = "poptin"
               source["name"] = "Poptin"
               source["logo"] = "assets/icon.png"
               require(manifest == source, "OpenClaw bundle metadata must match the existing Cursor metadata")
