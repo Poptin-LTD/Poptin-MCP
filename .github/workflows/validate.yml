@@ -284,7 +284,14 @@ jobs:
               require(job["needs"] == "validate", "ClawHub publication must wait for validation")
               require(job["with"]["owner"] == "poptin" and job["with"]["family"] == "bundle-plugin",
                       "ClawHub must publish the bundle package under poptin")
-              require(job["with"]["source_path"] == "plugins/openclaw", "ClawHub must publish only its distribution")
+              settings = job["with"]
+              require(settings["source"] == "./plugins/openclaw" and "source_path" not in settings and "ref" not in settings,
+                      "ClawHub must publish its checked-out distribution without a second GitHub fetch")
+              require(settings["source_repo"] == "Poptin-LTD/Poptin-MCP" and
+                      settings["source_commit"] == "${{ github.sha }}" and settings["source_ref"] == "${{ github.ref }}",
+                      "ClawHub must retain the workflow run's source attribution")
+              require(settings["version"] == load_json(ROOT / "plugins/openclaw/.cursor-plugin/plugin.json")["version"],
+                      "ClawHub publish version must match the bundle version")
 
 
           def check_remote_links(links):
