@@ -8,8 +8,8 @@ do not need to install ClawHub or OpenClaw on their computers.
 
 The workflow publishes as the ClawHub owner `poptin`. The token's account must
 have publishing access to that owner. The bundle's display name is `Poptin` and
-OpenClaw derives the runtime ID `poptin` from it. The bundle explicitly sets
-the ClawHub catalog ID to `poptin`.
+OpenClaw derives the runtime ID `poptin` from it;
+review the resolved catalog name in the dry-run output before publication.
 The owner is fixed in the workflow, so each run uses the same publisher.
 This flow publishes to ClawHub and does not require an npm account or release.
 
@@ -53,10 +53,7 @@ Runtime/OAuth verification is still required before release.
 
 The workflow is manual and restricted to the upstream default branch. It uses
 the official reusable package workflow pinned to a commit, publishing only
-`plugins/openclaw` from the run's checkout, with the repository, commit, and ref
-recorded as source attribution. This avoids a second GitHub API fetch of the
-same commit. The pinned publisher requires an explicit workflow `version`;
-validation checks that it matches the bundle manifest. Its Node/Bun dependencies
+`plugins/openclaw` from the run's exact source commit. Its Node/Bun dependencies
 are installed on the GitHub runner. No release is published by an ordinary push.
 
 A successful static check does not prove OAuth compatibility or tool execution.

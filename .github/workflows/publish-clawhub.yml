@@ -31,11 +31,9 @@ jobs:
     # Pinned upstream workflow and CLI source; reviewed 2026-11-24.
     uses: openclaw/clawhub/.github/workflows/package-publish.yml@6b91b6328c8eeb391ffe59deaddbf136b8db1683
     with:
-      # Use the caller checkout instead of fetching the same commit through the API.
-      source: ./plugins/openclaw
-      source_repo: Poptin-LTD/Poptin-MCP
-      source_commit: ${{ github.sha }}
-      source_ref: ${{ github.ref }}
+      source: Poptin-LTD/Poptin-MCP
+      ref: ${{ github.sha }}
+      source_path: plugins/openclaw
       version: "1.0.0"
       family: bundle-plugin
       owner: poptin
