@@ -30,9 +30,12 @@ claude mcp add --transport http --scope user poptin https://mcp.popt.in/mcp
 In Claude Code, use `/mcp` to authenticate the Poptin connection.
 
 For local plugin testing, clone this repository and run
-`claude --plugin-dir /absolute/path/to/Poptin-MCP`. Its
-`.claude-plugin/plugin.json` and root `.mcp.json` package the same connection.
+`claude --plugin-dir /absolute/path/to/Poptin-MCP/plugins/claude`. The isolated
+`plugins/claude` package contains `.claude-plugin/plugin.json` and its own
+`.mcp.json` for the same connection.
 Choose either the plugin or a direct configuration to avoid duplicate tools.
+The repository root is not a Claude plugin. Maintainers should follow the
+[Claude directory submission guide](claude-publishing.md).
 
 [Claude Code MCP guide](https://code.claude.com/docs/en/mcp) ·
 [Plugin manifest reference](https://code.claude.com/docs/en/plugins-reference)

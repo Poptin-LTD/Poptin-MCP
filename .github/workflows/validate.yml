@@ -157,7 +157,7 @@ jobs:
               require(plugin["license"] == "MIT", "Plugin license must agree with LICENSE and NOTICE.md")
               require(re.fullmatch(r"\d+\.\d+\.\d+", registry["version"]), "Use a three-part release version")
 
-              for filename in ("plugin.json", ".claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json", "plugins/openclaw/.cursor-plugin/plugin.json"):
+              for filename in ("plugin.json", "plugins/claude/.claude-plugin/plugin.json", ".cursor-plugin/plugin.json", "gemini-extension.json", "plugins/openclaw/.cursor-plugin/plugin.json"):
                   data = load_json(ROOT / filename)
                   expected_name = "Poptin" if filename == "plugins/openclaw/.cursor-plugin/plugin.json" else "poptin"
                   require(data["name"] == expected_name, f"Unexpected plugin name in {filename}")
@@ -167,6 +167,7 @@ jobs:
               connections = {
                   "mcp.json": ("mcpServers", {"type": "streamable-http", "url": ENDPOINT}),
                   ".mcp.json": ("mcpServers", {"type": "http", "url": ENDPOINT}),
+                  "plugins/claude/.mcp.json": ("mcpServers", {"type": "http", "url": ENDPOINT}),
                   "gemini-extension.json": ("mcpServers", {"httpUrl": ENDPOINT}),
                   "examples/vscode.mcp.json": ("servers", {"type": "http", "url": ENDPOINT}),
               }
@@ -174,13 +175,14 @@ jobs:
                   require(load_json(ROOT / filename)[key] == {"poptin": expected},
                           f"Unexpected endpoint, transport, headers, or server entries in {filename}")
 
-              for filename in (".claude-plugin/plugin.json", ".cursor-plugin/plugin.json"):
+              for filename in ("plugins/claude/.claude-plugin/plugin.json", ".cursor-plugin/plugin.json"):
                   data = load_json(ROOT / filename)
                   require(data["repository"] == REPOSITORY and data["license"] == "MIT", f"Inconsistent metadata: {filename}")
-              claude = load_json(ROOT / ".claude-plugin/plugin.json")
+              claude = load_json(ROOT / "plugins/claude/.claude-plugin/plugin.json")
               require(claude["privacyPolicyUrl"] == "https://www.poptin.com/privacy-policy/",
                       "Claude listing must explicitly identify Poptin's privacy policy")
-              icon = contained_file(ROOT, claude["icon"])
+              require(claude["icon"] == "./.claude-plugin/icon.png", "Claude icon must stay inside its distribution")
+              icon = contained_file(ROOT / "plugins/claude", claude["icon"])
               icon_data = icon.read_bytes()
               require(icon_data[:8] == b"\x89PNG\r\n\x1a\n", "Claude listing icon must be PNG")
               width, height = struct.unpack(">II", icon_data[16:24])
@@ -215,6 +217,17 @@ jobs:
 
 
 
+          def validate_claude_package():
+              package = ROOT / "plugins/claude"
+              expected = {".claude-plugin/plugin.json", ".claude-plugin/icon.png", ".mcp.json", "README.md", "LICENSE", "NOTICE.md"}
+              actual = {str(path.relative_to(package)) for path in package.rglob("*") if path.is_file()}
+              require(actual == expected, "Claude distribution must contain exactly the intended package files")
+              require(load_json(package / ".mcp.json") == load_json(ROOT / ".mcp.json"),
+                      "Claude and Cursor must use the same native HTTP configuration without embedded credentials")
+              require((package / "LICENSE").read_bytes() == (ROOT / "LICENSE").read_bytes(),
+                      "Claude distribution must preserve the repository license")
+
+
           def validate_openclaw_package():
               package = ROOT / "plugins/openclaw"
               expected = {".cursor-plugin/plugin.json", ".mcp.json", "assets/icon.png", "README.md", "LICENSE", "NOTICE.md"}
@@ -243,11 +256,12 @@ jobs:
                   if any(part in IGNORED for part in relative.parts):
                       continue
                   require(not path.is_symlink(), f"Package cannot contain symlinks: {relative}")
+                  require(".claude-plugin" not in relative.parts or relative.parts[:3] == ("plugins", "claude", ".claude-plugin"),
+                          f"Claude metadata is allowed only in plugins/claude/.claude-plugin: {relative}")
                   if not path.is_file():
                       continue
-                  require(path.suffix.lower() in allowed or str(relative) in {"LICENSE", ".gitignore", "plugins/openclaw/LICENSE"},
+                  require(path.suffix.lower() in allowed or str(relative) in {"LICENSE", ".gitignore", "plugins/openclaw/LICENSE", "plugins/claude/LICENSE"},
                           f"Unexpected file type: {relative}")
-                  require(".claude-plugin" not in relative.parts[1:], f"Nested Claude plugin: {relative}")
                   require(path.name not in {"requirements-dev.txt", "package.json", "package-lock.json", "pyproject.toml"},
                           f"Development manifest: {relative}")
                   if path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico"}:
@@ -328,10 +342,11 @@ jobs:
                   validate_schema(filename, args.schema_dir)
                   print(f"PASS {filename}: official JSON schema")
               validate_metadata()
+              validate_claude_package()
               validate_openclaw_package()
               print("PASS endpoint, identity, version, native configurations, and listing assets")
               validate_root_package()
-              print("PASS root package file types and no nested Claude package")
+              print("PASS repository file types and isolated Claude package location")
               validate_workflow()
               print("PASS workflow YAML and permissions")
               validate_documents()
